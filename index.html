@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการสูตรและคำนวณต้นทุนระดับมืออาชีพ (Pro Edition)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500 text-slate-900 p-2.5 rounded-xl font-bold text-xl shadow-inner">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight">ProCost Master <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 font-normal">Pro Edition v2.0</span></h1>
+                    <p class="text-xs text-slate-400">ระบบจัดการวัตถุดิบ อุปกรณ์ แพ็กเกจจิ้ง และคำนวณต้นทุนอาหาร</p>
+                </div>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <nav class="flex flex-wrap gap-1 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700">
+                <button onclick="switchTab('ingredients')" id="btn-ingredients" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 bg-emerald-600 text-white shadow">
+                    <i class="fa-solid fa-boxes-stacked"></i> วัตถุดิบ
+                </button>
+                <button onclick="switchTab('equipment')" id="btn-equipment" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700">
+                    <i class="fa-solid fa-blender"></i> อุปกรณ์
+                </button>
+                <button onclick="switchTab('packaging')" id="btn-packaging" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700">
+                    <i class="fa-solid fa-box-open"></i> แพ็กเกจจิ้ง
+                </button>
+                <button onclick="switchTab('subrecipes')" id="btn-subrecipes" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700">
+                    <i class="fa-solid fa-bowl-food"></i> สูตรย่อย
+                </button>
+                <button onclick="switchTab('recipes')" id="btn-recipes" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700">
+                    <i class="fa-solid fa-utensils"></i> เมนูหลัก
+                </button>
+                <button onclick="switchTab('breakeven')" id="btn-breakeven" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700">
+                    <i class="fa-solid fa-chart-line"></i> จุดคุ้มทุน & เดลิเวอรี
+                </button>
+                <button onclick="switchTab('backup')" id="btn-backup" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700">
+                    <i class="fa-solid fa-database"></i> สำรองข้อมูล
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 overflow-y-auto">
+
+        <!-- TAB 1: INGREDIENT MASTER -->
+        <section id="tab-ingredients" class="tab-content active space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-boxes-stacked text-emerald-600"></i> ฐานข้อมูลวัตถุดิบกลาง (Ingredient Master)
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-0.5">ตั้งค่าราคาซื้อหน่วยใหญ่และแปลงหน่วยย่อยอัตโนมัติ (บาทต่อหน่วยย่อย)</p>
+                </div>
+                <button onclick="openIngredientModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus"></i> เพิ่มวัตถุดิบใหม่
+                </button>
+            </div>
+
+            <div class="flex items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+                <i class="fa-solid fa-magnifying-glass text-slate-400 ml-2"></i>
+                <input type="text" id="search-ingredient" oninput="renderIngredients()" placeholder="ค้นหาชื่อวัตถุดิบ..." class="w-full bg-transparent border-none outline-none text-sm text-slate-700 placeholder-slate-400">
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-xs uppercase font-semibold tracking-wider border-b border-slate-200">
+                                <th class="p-4">ชื่อวัตถุดิบ</th>
+                                <th class="p-4">ราคาซื้อ (บาท)</th>
+                                <th class="p-4">ปริมาณหน่วยใหญ่</th>
+                                <th class="p-4">หน่วยย่อย</th>
+                                <th class="p-4 text-emerald-700 font-bold">ต้นทุนต่อหน่วยย่อย</th>
+                                <th class="p-4">หมายเหตุ</th>
+                                <th class="p-4 text-right">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ingredients-table-body" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: EQUIPMENT MASTER -->
+        <section id="tab-equipment" class="tab-content space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-blender text-emerald-600"></i> ระบบจัดการอุปกรณ์/เครื่องมือ (Equipment Master)
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-0.5">บันทึกต้นทุนอุปกรณ์ (หม้อ, เครื่องปั่น, เตา, เทอร์โมมิเตอร์) เพื่อคำนวณค่าเสื่อมราคาต่อรอบหรือต่อชิ้น</p>
+                </div>
+                <button onclick="openEquipmentModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus"></i> เพิ่มอุปกรณ์ใหม่
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-xs uppercase font-semibold tracking-wider border-b border-slate-200">
+                                <th class="p-4">ชื่ออุปกรณ์</th>
+                                <th class="p-4">ราคาซื้อ (บาท)</th>
+                                <th class="p-4">อายุการใช้งาน (เดือน/ปี หรือ ชิ้นงาน)</th>
+                                <th class="p-4 text-emerald-700 font-bold">ต้นทุนเฉลี่ย / หน่วยผลิต</th>
+                                <th class="p-4">หมายเหตุ</th>
+                                <th class="p-4 text-right">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="equipment-table-body" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: PACKAGING MASTER -->
+        <section id="tab-packaging" class="tab-content space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-box-open text-emerald-600"></i> ระบบจัดการแพ็กเกจจิ้ง (Packaging Master)
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-0.5">บันทึกต้นทุนแก้ว, ฝา, หลอด, ถุงซีล, สติกเกอร์ (ซื้อยกแพ็ค คำนวณราคาต่อชิ้นอัตโนมัติ)</p>
+                </div>
+                <button onclick="openPackagingModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus"></i> เพิ่มแพ็กเกจจิ้งใหม่
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-xs uppercase font-semibold tracking-wider border-b border-slate-200">
+                                <th class="p-4">ชื่อแพ็กเกจจิ้ง</th>
+                                <th class="p-4">ราคาซื้อยกลัง/แพ็ค (บาท)</th>
+                                <th class="p-4">จำนวนชิ้นต่อแพ็ค</th>
+                                <th class="p-4 text-emerald-700 font-bold">ต้นทุนต่อ 1 ชิ้น</th>
+                                <th class="p-4">หมายเหตุ</th>
+                                <th class="p-4 text-right">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="packaging-table-body" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: SUB-RECIPES -->
+        <section id="tab-subrecipes" class="tab-content space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-bowl-food text-emerald-600"></i> ระบบสูตรย่อย (Sub-Recipes / Pre-mix)
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-0.5">สร้างของเตรียมล่วงหน้า เช่น ไซรัป น้ำซุป เพื่อนำไปรวมในเมนูหลัก</p>
+                </div>
+                <button onclick="openSubRecipeModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus"></i> สร้างสูตรย่อยใหม่
+                </button>
+            </div>
+
+            <div id="subrecipes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+        </section>
+
+        <!-- TAB 5: MAIN RECIPES -->
+        <section id="tab-recipes" class="tab-content space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-utensils text-emerald-600"></i> ระบบสูตรเมนูหลัก (Main Recipes & Costing)
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-0.5">รวมวัตถุดิบ, สูตรย่อย, แพ็กเกจจิ้ง และอุปกรณ์ คำนวณต้นทุน กำไร และเดลิเวอรี</p>
+                </div>
+                <button onclick="openRecipeModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus"></i> เพิ่มเมนูอาหาร/เครื่องดื่ม
+                </button>
+            </div>
+
+            <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- TAB 6: BREAK-EVEN & DELIVERY -->
+        <section id="tab-breakeven" class="tab-content space-y-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-emerald-600"></i> วิเคราะห์จุดคุ้มทุน & ช่องทางเดลิเวอรี
+                </h2>
+                <p class="text-sm text-slate-500 mt-0.5">ตั้งค่าค่าใช้จ่ายคงที่ต่อเดือน เพื่อคำนวณจุดคุ้มทุน พร้อมจำลองราคาขายเดลิเวอรี (GP & VAT)</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 lg:col-span-1">
+                    <h3 class="font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-wallet text-emerald-600"></i> ตั้งค่าค่าใช้จ่ายร้านค้า
+                    </h3>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ค่าใช้จ่ายคงที่รวมต่อเดือน (บาท)</label>
+                        <input type="number" id="be-fixed-cost" value="30000" oninput="calculateBreakEven()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">วันทำการเฉลี่ยต่อเดือน (วัน)</label>
+                        <input type="number" id="be-days" value="30" oninput="calculateBreakEven()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">เลือกเมนูหลักตัวอย่าง</label>
+                        <select id="be-recipe-select" onchange="calculateBreakEven()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500"></select>
+                    </div>
+                    <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-100 space-y-2">
+                        <div class="text-xs text-emerald-800 font-medium">ผลการคำนวณจุดคุ้มทุนเบื้องต้น:</div>
+                        <div class="text-lg font-bold text-emerald-900" id="be-result-units">0 หน่วย / เดือน</div>
+                        <div class="text-xs text-emerald-700" id="be-result-daily">หรือประมาณ 0 หน่วย / วัน</div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 lg:col-span-2 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 border-b pb-2 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-emerald-600"></i> สรุปผลกำไรและการจำลองเดลิเวอรี (GP & VAT)
+                        </h3>
+                        <div id="delivery-simulation-content" class="space-y-4 text-sm"></div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t text-xs text-slate-400 text-center">
+                        * การคำนวณเดลิเวอรีจะหักค่า GP จากราคาขาย แล้วหักภาษีมูลค่าเพิ่ม 7%
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 7: BACKUP & DATA -->
+        <section id="tab-backup" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl mx-auto space-y-6">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-database text-emerald-600"></i> จัดการข้อมูล & สำรองข้อมูล (Backup / Restore)
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-0.5">ระบบบันทึกอัตโนมัติลงในเบราว์เซอร์ คุณสามารถส่งออกหรือนำเข้าข้อมูลเป็นไฟล์ JSON ได้</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-900 text-white p-4 rounded-xl shadow flex flex-col items-center justify-center gap-2 transition group">
+                        <i class="fa-solid fa-file-arrow-down text-2xl text-emerald-400 group-hover:scale-110 transition-transform"></i>
+                        <span class="font-semibold text-sm">สำรองข้อมูล (Export JSON)</span>
+                    </button>
+                    <label class="bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl shadow flex flex-col items-center justify-center gap-2 transition cursor-pointer group">
+                        <i class="fa-solid fa-file-arrow-up text-2xl text-emerald-100 group-hover:scale-110 transition-transform"></i>
+                        <span class="font-semibold text-sm">กู้คืนข้อมูล (Import JSON)</span>
+                        <input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden">
+                    </label>
+                </div>
+
+                <div class="border-t pt-6">
+                    <button onclick="resetData()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-medium py-3 rounded-xl text-sm transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-trash-can"></i> รีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: INGREDIENT -->
+    <div id="ingredient-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="ingredient-modal-title" class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-box text-emerald-400"></i> เพิ่มวัตถุดิบใหม่</h3>
+                <button onclick="closeIngredientModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="ingredient-form" onsubmit="saveIngredient(event)" class="p-6 space-y-4">
+                <input type="hidden" id="ing-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อวัตถุดิบ *</label>
+                    <input type="text" id="ing-name" required placeholder="เช่น นมสด, เมล็ดกาแฟ" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ราคาซื้อรวม (บาท) *</label>
+                        <input type="number" step="0.01" id="ing-price" required placeholder="250" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ปริมาณหน่วยใหญ่ *</label>
+                        <input type="number" step="0.001" id="ing-qty" required placeholder="1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">หน่วยใหญ่ *</label>
+                        <select id="ing-unit-large" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                            <option value="kg">กิโลกรัม (kg)</option>
+                            <option value="l">ลิตร (l)</option>
+                            <option value="pack">แพ็ค / ถุง</option>
+                            <option value="pcs">ชิ้น</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">หน่วยย่อย (ใช้ในสูตร) *</label>
+                        <select id="ing-unit-small" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                            <option value="g">กรัม (g)</option>
+                            <option value="ml">มิลลิลิตร (ml)</option>
+                            <option value="pcs">ชิ้น</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">ตัวคูณแปลงหน่วย (เช่น 1kg = 1000g)</label>
+                    <input type="number" step="0.001" id="ing-conversion" value="1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">หมายเหตุ</label>
+                    <input type="text" id="ing-note" placeholder="เก็บในตู้เย็น" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end gap-3 pt-3 border-t">
+                    <button type="button" onclick="closeIngredientModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl text-sm transition">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EQUIPMENT -->
+    <div id="equipment-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="equipment-modal-title" class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-blender text-emerald-400"></i> เพิ่มอุปกรณ์ใหม่</h3>
+                <button onclick="closeEquipmentModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="equipment-form" onsubmit="saveEquipment(event)" class="p-6 space-y-4">
+                <input type="hidden" id="eq-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">ชื่ออุปกรณ์ *</label>
+                    <input type="text" id="eq-name" required placeholder="เช่น เครื่องปั่นน้ำผลไม้, หม้อต้มสแตนเลส, เทอร์โมมิเตอร์" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">ราคาซื้ออุปกรณ์ (บาท) *</label>
+                    <input type="number" step="0.01" id="eq-price" required placeholder="3500" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">อายุการใช้งานประเมิน (จำนวนหน่วยผลิต หรือ จำนวนแก้วที่จะทำตลอดอายุอุปกรณ์) *</label>
+                    <input type="number" id="eq-lifespan-units" required placeholder="10000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    <span class="text-[11px] text-slate-400 mt-1 block">ระบบจะนำราคาซื้อหารด้วยจำนวนหน่วยผลิตนี้ เพื่อคิดเป็นต้นทุนค่าเสื่อมต่อ 1 เมนู</span>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">หมายเหตุ</label>
+                    <input type="text" id="eq-note" placeholder="รับประกัน 1 ปี" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end gap-3 pt-3 border-t">
+                    <button type="button" onclick="closeEquipmentModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl text-sm transition">บันทึกอุปกรณ์</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: PACKAGING -->
+    <div id="packaging-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="packaging-modal-title" class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-box-open text-emerald-400"></i> เพิ่มแพ็กเกจจิ้งใหม่</h3>
+                <button onclick="closePackagingModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="packaging-form" onsubmit="savePackaging(event)" class="p-6 space-y-4">
+                <input type="hidden" id="pkg-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อแพ็กเกจจิ้ง *</label>
+                    <input type="text" id="pkg-name" required placeholder="เช่น แก้วพลาสติก 16 oz, ฝาโดม, หลอดงอ, สติกเกอร์โลโก้" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ราคาซื้อยกลัง/แพ็ค (บาท) *</label>
+                        <input type="number" step="0.01" id="pkg-price" required placeholder="1200" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">จำนวนชิ้นต่อแพ็ค *</label>
+                        <input type="number" id="pkg-qty" required placeholder="1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">หมายเหตุ</label>
+                    <input type="text" id="pkg-note" placeholder="ซื้อจากร้านส่งพลาสติก" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end gap-3 pt-3 border-t">
+                    <button type="button" onclick="closePackagingModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl text-sm transition">บันทึกแพ็กเกจจิ้ง</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: SUB-RECIPE -->
+    <div id="subrecipe-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="subrecipe-modal-title" class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-bowl-food text-emerald-400"></i> สร้างสูตรย่อยใหม่</h3>
+                <button onclick="closeSubRecipeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="subrecipe-form" onsubmit="saveSubRecipe(event)" class="p-6 space-y-4 overflow-y-auto flex-grow">
+                <input type="hidden" id="sub-id">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อสูตรย่อย *</label>
+                        <input type="text" id="sub-name" required placeholder="เช่น ไซรัปน้ำตาลทราย" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">ผลผลิตรวม (Yield) *</label>
+                            <input type="number" step="0.01" id="sub-yield" required placeholder="1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">หน่วยผลผลิต *</label>
+                            <select id="sub-unit" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                                <option value="g">กรัม (g)</option>
+                                <option value="ml">มิลลิลิตร (ml)</option>
+                                <option value="pcs">ชิ้น</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">วัตถุดิบในสูตรย่อย</label>
+                        <button type="button" onclick="addSubRecipeItemRow()" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> เพิ่มวัตถุดิบ
+                        </button>
+                    </div>
+                    <div id="sub-items-container" class="space-y-2"></div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeSubRecipeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl text-sm transition">บันทึกสูตรย่อย</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: MAIN RECIPE -->
+    <div id="recipe-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="recipe-modal-title" class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-utensils text-emerald-400"></i> เพิ่มเมนูหลัก</h3>
+                <button onclick="closeRecipeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="recipe-form" onsubmit="saveRecipe(event)" class="p-6 space-y-4 overflow-y-auto flex-grow">
+                <input type="hidden" id="rec-id">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อเมนูหลัก *</label>
+                        <input type="text" id="rec-name" required placeholder="เช่น ลาเต้เย็น 16 oz" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ราคาขายหน้าร้าน (บาท) *</label>
+                        <input type="number" step="0.01" id="rec-price" required placeholder="65" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- Ingredients -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">1. วัตถุดิบดิบที่ใช้</label>
+                        <button type="button" onclick="addRecipeIngRow()" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> เพิ่มวัตถุดิบ
+                        </button>
+                    </div>
+                    <div id="recipe-ings-container" class="space-y-2"></div>
+                </div>
+
+                <!-- Sub-Recipes -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">2. สูตรย่อย (Pre-mix) ที่ใช้</label>
+                        <button type="button" onclick="addRecipeSubRow()" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> เพิ่มสูตรย่อย
+                        </button>
+                    </div>
+                    <div id="recipe-subs-container" class="space-y-2"></div>
+                </div>
+
+                <!-- Packaging -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">3. แพ็กเกจจิ้งที่ใช้ (แก้ว, ฝา, หลอด ฯลฯ)</label>
+                        <button type="button" onclick="addRecipePkgRow()" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> เพิ่มแพ็กเกจจิ้ง
+                        </button>
+                    </div>
+                    <div id="recipe-pkgs-container" class="space-y-2"></div>
+                </div>
+
+                <!-- Equipment -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">4. อุปกรณ์ / เครื่องมือที่ปันส่วนต้นทุนต่อหน่วย</label>
+                        <button type="button" onclick="addRecipeEqRow()" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> เพิ่มอุปกรณ์
+                        </button>
+                    </div>
+                    <div id="recipe-eqs-container" class="space-y-2"></div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeRecipeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl text-sm transition">บันทึกเมนูหลัก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        let appData = {
+            ingredients: [
+                { id: 'ing_1', name: 'เมล็ดกาแฟคั่ว', price: 450, qty: 1, unitLarge: 'kg', unitSmall: 'g', conversion: 1000, note: 'เกรดพรีเมียม' },
+                { id: 'ing_2', name: 'นมสดจืด', price: 75, qty: 1000, unitLarge: 'l', unitSmall: 'ml', conversion: 1000, note: 'แกลลอน' },
+                { id: 'ing_3', name: 'นมข้นหวาน', price: 28, qty: 385, unitLarge: 'pcs', unitSmall: 'g', conversion: 385, note: 'กระป๋อง' }
+            ],
+            equipment: [
+                { id: 'eq_1', name: 'เครื่องชงกาแฟเอสเพรสโซ่', price: 35000, lifespanUnits: 15000, note: 'รับประกัน 1 ปี' },
+                { id: 'eq_2', name: 'เครื่องบดกาแฟ', price: 8500, lifespanUnits: 15000, note: 'ใบมีดเซรามิก' }
+            ],
+            packaging: [
+                { id: 'pkg_1', name: 'แก้วพลาสติก 16 oz + ฝาโดม', price: 1200, qty: 500, note: 'ยกลัง' },
+                { id: 'pkg_2', name: 'หลอดพลาสติกห่อฟิล์ม', price: 150, qty: 250, note: 'ห่อเดี่ยว' }
+            ],
+            subRecipes: [
+                {
+                    id: 'sub_1',
+                    name: 'ไซรัปคาราเมลเข้มข้น',
+                    yieldQty: 1000,
+                    unit: 'g',
+                    items: [
+                        { id: 'ing_3', qty: 300 }
+                    ]
+                }
+            ],
+            recipes: [
+                {
+                    id: 'rec_1',
+                    name: 'คาปูชิโน่เย็น 16 oz',
+                    price: 65,
+                    ingredients: [
+                        { id: 'ing_1', qty: 18 },
+                        { id: 'ing_2', qty: 150 }
+                    ],
+                    subRecipes: [],
+                    packaging: [
+                        { id: 'pkg_1', qty: 1 },
+                        { id: 'pkg_2', qty: 1 }
+                    ],
+                    equipment: [
+                        { id: 'eq_1', qty: 1 },
+                        { id: 'eq_2', qty: 1 }
+                    ]
+                }
+            ]
+        };
+
+        function loadData() {
+            const saved = localStorage.getItem('procost_master_data_v2');
+            if (saved) {
+                try { appData = JSON.parse(saved); } catch(e) { console.error(e); }
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('procost_master_data_v2', JSON.stringify(appData));
+            renderAll();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.className = "px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700";
+            });
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if(activeBtn) activeBtn.className = "px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 bg-emerald-600 text-white shadow";
+
+            if(tabId === 'breakeven') {
+                updateBreakEvenRecipeSelect();
+                calculateBreakEven();
+            }
+        }
+
+        // --- COST CALCULATORS ---
+        function getIngredientUnitCost(id) {
+            const item = appData.ingredients.find(i => i.id === id);
+            if (!item || item.qty <= 0) return 0;
+            return item.price / (item.qty * (item.conversion || 1));
+        }
+
+        function getEquipmentUnitCost(id) {
+            const item = appData.equipment.find(e => e.id === id);
+            if (!item || item.lifespanUnits <= 0) return 0;
+            return item.price / item.lifespanUnits;
+        }
+
+        function getPackagingUnitCost(id) {
+            const item = appData.packaging.find(p => p.id === id);
+            if (!item || item.qty <= 0) return 0;
+            return item.price / item.qty;
+        }
+
+        function getSubRecipeUnitCost(id) {
+            const sub = appData.subRecipes.find(s => s.id === id);
+            if (!sub || sub.yieldQty <= 0) return 0;
+            let cost = 0;
+            sub.items.forEach(i => {
+                cost += getIngredientUnitCost(i.id) * i.qty;
+            });
+            return cost / sub.yieldQty;
+        }
+
+        function calculateRecipeCost(rec) {
+            let total = 0;
+            if (rec.ingredients) rec.ingredients.forEach(i => total += getIngredientUnitCost(i.id) * i.qty);
+            if (rec.subRecipes) rec.subRecipes.forEach(s => total += getSubRecipeUnitCost(s.id) * s.qty);
+            if (rec.packaging) rec.packaging.forEach(p => total += getPackagingUnitCost(p.id) * p.qty);
+            if (rec.equipment) rec.equipment.forEach(e => total += getEquipmentUnitCost(e.id) * e.qty);
+            return total;
+        }
+
+        function renderAll() {
+            renderIngredients();
+            renderEquipment();
+            renderPackaging();
+            renderSubRecipes();
+            renderRecipes();
+            updateBreakEvenRecipeSelect();
+        }
+
+        // --- INGREDIENTS ---
+        function renderIngredients() {
+            const tbody = document.getElementById('ingredients-table-body');
+            tbody.innerHTML = '';
+            appData.ingredients.forEach(i => {
+                const uc = getIngredientUnitCost(i.id);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-medium">${i.name}</td>
+                        <td class="p-4">฿${i.price.toLocaleString()}</td>
+                        <td class="p-4">${i.qty} ${i.unitLarge}</td>
+                        <td class="p-4">${i.unitSmall}</td>
+                        <td class="p-4 font-bold text-emerald-600">฿${uc.toFixed(4)} / ${i.unitSmall}</td>
+                        <td class="p-4 text-xs text-slate-500">${i.note || '-'}</td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="openIngredientModal('${i.id}')" class="text-slate-400 hover:text-emerald-600"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteIngredient('${i.id}')" class="text-slate-400 hover:text-rose-600"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        }
+        function openIngredientModal(id = null) {
+            document.getElementById('ingredient-modal').classList.remove('hidden');
+            if (id) {
+                const item = appData.ingredients.find(i => i.id === id);
+                document.getElementById('ing-id').value = item.id;
+                document.getElementById('ing-name').value = item.name;
+                document.getElementById('ing-price').value = item.price;
+                document.getElementById('ing-qty').value = item.qty;
+                document.getElementById('ing-unit-large').value = item.unitLarge;
+                document.getElementById('ing-unit-small').value = item.unitSmall;
+                document.getElementById('ing-conversion').value = item.conversion;
+                document.getElementById('ing-note').value = item.note;
+            } else {
+                document.getElementById('ingredient-form').reset();
+                document.getElementById('ing-id').value = '';
+            }
+        }
+        function closeIngredientModal() { document.getElementById('ingredient-modal').classList.add('hidden'); }
+        function saveIngredient(e) {
+            e.preventDefault();
+            const id = document.getElementById('ing-id').value;
+            const data = {
+                id: id || 'ing_' + Date.now(),
+                name: document.getElementById('ing-name').value,
+                price: parseFloat(document.getElementById('ing-price').value),
+                qty: parseFloat(document.getElementById('ing-qty').value),
+                unitLarge: document.getElementById('ing-unit-large').value,
+                unitSmall: document.getElementById('ing-unit-small').value,
+                conversion: parseFloat(document.getElementById('ing-conversion').value) || 1,
+                note: document.getElementById('ing-note').value
+            };
+            if (id) {
+                const idx = appData.ingredients.findIndex(i => i.id === id);
+                if (idx !== -1) appData.ingredients[idx] = data;
+            } else { appData.ingredients.push(data); }
+            saveData();
+            closeIngredientModal();
+        }
+        function deleteIngredient(id) {
+            if (confirm('ลบวัตถุดิบนี้?')) { appData.ingredients = appData.ingredients.filter(i => i.id !== id); saveData(); }
+        }
+
+        // --- EQUIPMENT ---
+        function renderEquipment() {
+            const tbody = document.getElementById('equipment-table-body');
+            tbody.innerHTML = '';
+            appData.equipment.forEach(e => {
+                const uc = getEquipmentUnitCost(e.id);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-medium">${e.name}</td>
+                        <td class="p-4">฿${e.price.toLocaleString()}</td>
+                        <td class="p-4">${e.lifespanUnits.toLocaleString()} หน่วยผลิต</td>
+                        <td class="p-4 font-bold text-emerald-600">฿${uc.toFixed(4)} / หน่วย</td>
+                        <td class="p-4 text-xs text-slate-500">${e.note || '-'}</td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="openEquipmentModal('${e.id}')" class="text-slate-400 hover:text-emerald-600"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteEquipment('${e.id}')" class="text-slate-400 hover:text-rose-600"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        }
+        function openEquipmentModal(id = null) {
+            document.getElementById('equipment-modal').classList.remove('hidden');
+            if (id) {
+                const item = appData.equipment.find(e => e.id === id);
+                document.getElementById('eq-id').value = item.id;
+                document.getElementById('eq-name').value = item.name;
+                document.getElementById('eq-price').value = item.price;
+                document.getElementById('eq-lifespan-units').value = item.lifespanUnits;
+                document.getElementById('eq-note').value = item.note;
+            } else {
+                document.getElementById('equipment-form').reset();
+                document.getElementById('eq-id').value = '';
+            }
+        }
+        function closeEquipmentModal() { document.getElementById('equipment-modal').classList.add('hidden'); }
+        function saveEquipment(e) {
+            e.preventDefault();
+            const id = document.getElementById('eq-id').value;
+            const data = {
+                id: id || 'eq_' + Date.now(),
+                name: document.getElementById('eq-name').value,
+                price: parseFloat(document.getElementById('eq-price').value),
+                lifespanUnits: parseInt(document.getElementById('eq-lifespan-units').value) || 1,
+                note: document.getElementById('eq-note').value
+            };
+            if (id) {
+                const idx = appData.equipment.findIndex(e => e.id === id);
+                if (idx !== -1) appData.equipment[idx] = data;
+            } else { appData.equipment.push(data); }
+            saveData();
+            closeEquipmentModal();
+        }
+        function deleteEquipment(id) {
+            if (confirm('ลบอุปกรณ์นี้?')) { appData.equipment = appData.equipment.filter(e => e.id !== id); saveData(); }
+        }
+
+        // --- PACKAGING ---
+        function renderPackaging() {
+            const tbody = document.getElementById('packaging-table-body');
+            tbody.innerHTML = '';
+            appData.packaging.forEach(p => {
+                const uc = getPackagingUnitCost(p.id);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-medium">${p.name}</td>
+                        <td class="p-4">฿${p.price.toLocaleString()}</td>
+                        <td class="p-4">${p.qty} ชิ้น</td>
+                        <td class="p-4 font-bold text-emerald-600">฿${uc.toFixed(4)} / ชิ้น</td>
+                        <td class="p-4 text-xs text-slate-500">${p.note || '-'}</td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="openPackagingModal('${p.id}')" class="text-slate-400 hover:text-emerald-600"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deletePackaging('${p.id}')" class="text-slate-400 hover:text-rose-600"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        }
+        function openPackagingModal(id = null) {
+            document.getElementById('packaging-modal').classList.remove('hidden');
+            if (id) {
+                const item = appData.packaging.find(p => p.id === id);
+                document.getElementById('pkg-id').value = item.id;
+                document.getElementById('pkg-name').value = item.name;
+                document.getElementById('pkg-price').value = item.price;
+                document.getElementById('pkg-qty').value = item.qty;
+                document.getElementById('pkg-note').value = item.note;
+            } else {
+                document.getElementById('packaging-form').reset();
+                document.getElementById('pkg-id').value = '';
+            }
+        }
+        function closePackagingModal() { document.getElementById('packaging-modal').classList.add('hidden'); }
+        function savePackaging(e) {
+            e.preventDefault();
+            const id = document.getElementById('pkg-id').value;
+            const data = {
+                id: id || 'pkg_' + Date.now(),
+                name: document.getElementById('pkg-name').value,
+                price: parseFloat(document.getElementById('pkg-price').value),
+                qty: parseInt(document.getElementById('pkg-qty').value) || 1,
+                note: document.getElementById('pkg-note').value
+            };
+            if (id) {
+                const idx = appData.packaging.findIndex(p => p.id === id);
+                if (idx !== -1) appData.packaging[idx] = data;
+            } else { appData.packaging.push(data); }
+            saveData();
+            closePackagingModal();
+        }
+        function deletePackaging(id) {
+            if (confirm('ลบแพ็กเกจจิ้งนี้?')) { appData.packaging = appData.packaging.filter(p => p.id !== id); saveData(); }
+        }
+
+        // --- SUB-RECIPES ---
+        function renderSubRecipes() {
+            const grid = document.getElementById('subrecipes-grid');
+            grid.innerHTML = '';
+            if (appData.subRecipes.length === 0) {
+                grid.innerHTML = `<div class="col-span-full bg-white p-8 rounded-2xl text-center text-slate-400">ยังไม่มีสูตรย่อย</div>`;
+                return;
+            }
+            appData.subRecipes.forEach(sub => {
+                const uc = getSubRecipeUnitCost(sub.id);
+                let itemsHtml = '';
+                sub.items.forEach(it => {
+                    const ing = appData.ingredients.find(i => i.id === it.id);
+                    itemsHtml += `<li class="text-xs text-slate-600 flex justify-between"><span>${ing ? ing.name : ''}</span> <span>${it.qty} ${ing ? ing.unitSmall : ''}</span></li>`;
+                });
+                grid.innerHTML += `
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <h3 class="font-bold text-slate-800">${sub.name}</h3>
+                                <div class="space-x-1">
+                                    <button onclick="openSubRecipeModal('${sub.id}')" class="text-slate-400 hover:text-emerald-600"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button onclick="deleteSubRecipe('${sub.id}')" class="text-slate-400 hover:text-rose-600"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-500">ผลผลิต: ${sub.yieldQty} ${sub.unit}</div>
+                            <ul class="bg-slate-50 p-3 rounded-xl space-y-1">${itemsHtml}</ul>
+                        </div>
+                        <div class="pt-3 border-t flex justify-between items-center text-sm font-bold text-emerald-600">
+                            <span>ต้นทุน:</span> <span>฿${uc.toFixed(4)} / ${sub.unit}</span>
+                        </div>
+                    </div>`;
+            });
+        }
+        let tempSubItems = [];
+        function openSubRecipeModal(id = null) {
+            document.getElementById('subrecipe-modal').classList.remove('hidden');
+            tempSubItems = [];
+            if (id) {
+                const item = appData.subRecipes.find(s => s.id === id);
+                document.getElementById('sub-id').value = item.id;
+                document.getElementById('sub-name').value = item.name;
+                document.getElementById('sub-yield').value = item.yieldQty;
+                document.getElementById('sub-unit').value = item.unit;
+                tempSubItems = JSON.parse(JSON.stringify(item.items));
+            } else {
+                document.getElementById('subrecipe-form').reset();
+                document.getElementById('sub-id').value = '';
+                if(appData.ingredients.length > 0) tempSubItems = [{id: appData.ingredients[0].id, qty: 100}];
+            }
+            renderSubItemsContainer();
+        }
+        function closeSubRecipeModal() { document.getElementById('subrecipe-modal').classList.add('hidden'); }
+        function renderSubItemsContainer() {
+            const container = document.getElementById('sub-items-container');
+            container.innerHTML = '';
+            tempSubItems.forEach((item, idx) => {
+                let options = '';
+                appData.ingredients.forEach(i => options += `<option value="${i.id}" ${i.id === item.id ? 'selected' : ''}>${i.name}</option>`);
+                container.innerHTML += `
+                    <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border">
+                        <select onchange="tempSubItems[${idx}].id = this.value" class="flex-grow bg-white border rounded-lg px-2 py-1.5 text-sm">${options}</select>
+                        <input type="number" step="0.01" value="${item.qty}" onchange="tempSubItems[${idx}].qty = parseFloat(this.value)||0" class="w-24 bg-white border rounded-lg px-2 py-1.5 text-sm">
+                        <button type="button" onclick="tempSubItems.splice(${idx},1); renderSubItemsContainer()" class="text-rose-500 px-2"><i class="fa-solid fa-xmark"></i></button>
+                    </div>`;
+            });
+        }
+        function addSubRecipeItemRow() {
+            if(appData.ingredients.length === 0) return alert('ต้องเพิ่มวัตถุดิบก่อน');
+            tempSubItems.push({id: appData.ingredients[0].id, qty: 50});
+            renderSubItemsContainer();
+        }
+        function saveSubRecipe(e) {
+            e.preventDefault();
+            const id = document.getElementById('sub-id').value;
+            const data = {
+                id: id || 'sub_' + Date.now(),
+                name: document.getElementById('sub-name').value,
+                yieldQty: parseFloat(document.getElementById('sub-yield').value),
+                unit: document.getElementById('sub-unit').value,
+                items: tempSubItems
+            };
+            if(id) {
+                const idx = appData.subRecipes.findIndex(s => s.id === id);
+                if(idx !== -1) appData.subRecipes[idx] = data;
+            } else { appData.subRecipes.push(data); }
+            saveData();
+            closeSubRecipeModal();
+        }
+        function deleteSubRecipe(id) {
+            if(confirm('ลบสูตรย่อยนี้?')) { appData.subRecipes = appData.subRecipes.filter(s => s.id !== id); saveData(); }
+        }
+
+        // --- MAIN RECIPES ---
+        function renderRecipes() {
+            const grid = document.getElementById('recipes-grid');
+            grid.innerHTML = '';
+            if (appData.recipes.length === 0) {
+                grid.innerHTML = `<div class="col-span-full bg-white p-8 rounded-2xl text-center text-slate-400">ยังไม่มีเมนูหลัก</div>`;
+                return;
+            }
+            appData.recipes.forEach(rec => {
+                const cost = calculateRecipeCost(rec);
+                const profit = rec.price - cost;
+                const margin = rec.price > 0 ? (profit / rec.price) * 100 : 0;
+                grid.innerHTML = grid.innerHTML + `
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <h3 class="font-bold text-slate-800">${rec.name}</h3>
+                                <div class="space-x-1">
+                                    <button onclick="openRecipeModal('${rec.id}')" class="text-slate-400 hover:text-emerald-600"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button onclick="deleteRecipe('${rec.id}')" class="text-slate-400 hover:text-rose-600"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-500">ราคาขาย: <span class="font-semibold text-slate-800">฿${rec.price}</span></div>
+                        </div>
+                        <div class="space-y-2 pt-3 border-t text-xs">
+                            <div class="flex justify-between"><span class="text-slate-500">ต้นทุนรวมสุทธิ:</span> <span class="font-bold text-slate-800">฿${cost.toFixed(2)}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">กำไรขั้นต้น:</span> <span class="font-bold text-emerald-600">฿${profit.toFixed(2)} (${margin.toFixed(1)}%)</span></div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        let tempRecIngs = [], tempRecSubs = [], tempRecPkgs = [], tempRecEqs = [];
+        function openRecipeModal(id = null) {
+            document.getElementById('recipe-modal').classList.remove('hidden');
+            tempRecIngs = []; tempRecSubs = []; tempRecPkgs = []; tempRecEqs = [];
+            if (id) {
+                const item = appData.recipes.find(r => r.id === id);
+                document.getElementById('rec-id').value = item.id;
+                document.getElementById('rec-name').value = item.name;
+                document.getElementById('rec-price').value = item.price;
+                tempRecIngs = JSON.parse(JSON.stringify(item.ingredients || []));
+                tempRecSubs = JSON.parse(JSON.stringify(item.subRecipes || []));
+                tempRecPkgs = JSON.parse(JSON.stringify(item.packaging || []));
+                tempRecEqs = JSON.parse(JSON.stringify(item.equipment || []));
+            } else {
+                document.getElementById('recipe-form').reset();
+                document.getElementById('rec-id').value = '';
+                if(appData.ingredients.length > 0) tempRecIngs.push({id: appData.ingredients[0].id, qty: 10});
+                if(appData.packaging.length > 0) tempRecPkgs.push({id: appData.packaging[0].id, qty: 1});
+                if(appData.equipment.length > 0) tempRecEqs.push({id: appData.equipment[0].id, qty: 1});
+            }
+            renderRecipeContainers();
+        }
+        function closeRecipeModal() { document.getElementById('recipe-modal').classList.add('hidden'); }
+        function renderRecipeContainers() {
+            // Ings
+            const cIng = document.getElementById('recipe-ings-container'); cIng.innerHTML = '';
+            tempRecIngs.forEach((it, idx) => {
+                let opt = ''; appData.ingredients.forEach(i => opt += `<option value="${i.id}" ${i.id===it.id?'selected':''}>${i.name}</option>`);
+                cIng.innerHTML += `<div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border"><select onchange="tempRecIngs[${idx}].id=this.value" class="flex-grow bg-white border rounded-lg px-2 py-1 text-sm">${opt}</select><input type="number" step="0.01" value="${it.qty}" onchange="tempRecIngs[${idx}].qty=parseFloat(this.value)||0" class="w-24 bg-white border rounded-lg px-2 py-1 text-sm"><button type="button" onclick="tempRecIngs.splice(${idx},1); renderRecipeContainers()" class="text-rose-500 px-2"><i class="fa-solid fa-xmark"></i></button></div>`;
+            });
+            // Subs
+            const cSub = document.getElementById('recipe-subs-container'); cSub.innerHTML = '';
+            tempRecSubs.forEach((it, idx) => {
+                let opt = ''; appData.subRecipes.forEach(s => opt += `<option value="${s.id}" ${s.id===it.id?'selected':''}>${s.name}</option>`);
+                cSub.innerHTML += `<div class="flex items-center gap-2 bg-emerald-50/50 p-2 rounded-xl border"><select onchange="tempRecSubs[${idx}].id=this.value" class="flex-grow bg-white border rounded-lg px-2 py-1 text-sm">${opt}</select><input type="number" step="0.01" value="${it.qty}" onchange="tempRecSubs[${idx}].qty=parseFloat(this.value)||0" class="w-24 bg-white border rounded-lg px-2 py-1 text-sm"><button type="button" onclick="tempRecSubs.splice(${idx},1); renderRecipeContainers()" class="text-rose-500 px-2"><i class="fa-solid fa-xmark"></i></button></div>`;
+            });
+            // Pkgs
+            const cPkg = document.getElementById('recipe-pkgs-container'); cPkg.innerHTML = '';
+            tempRecPkgs.forEach((it, idx) => {
+                let opt = ''; appData.packaging.forEach(p => opt += `<option value="${p.id}" ${p.id===it.id?'selected':''}>${p.name}</option>`);
+                cPkg.innerHTML += `<div class="flex items-center gap-2 bg-amber-50/50 p-2 rounded-xl border"><select onchange="tempRecPkgs[${idx}].id=this.value" class="flex-grow bg-white border rounded-lg px-2 py-1 text-sm">${opt}</select><input type="number" step="0.01" value="${it.qty}" onchange="tempRecPkgs[${idx}].qty=parseFloat(this.value)||0" class="w-24 bg-white border rounded-lg px-2 py-1 text-sm"><button type="button" onclick="tempRecPkgs.splice(${idx},1); renderRecipeContainers()" class="text-rose-500 px-2"><i class="fa-solid fa-xmark"></i></button></div>`;
+            });
+            // Eqs
+            const cEq = document.getElementById('recipe-eqs-container'); cEq.innerHTML = '';
+            tempRecEqs.forEach((it, idx) => {
+                let opt = ''; appData.equipment.forEach(e => opt += `<option value="${e.id}" ${e.id===it.id?'selected':''}>${e.name}</option>`);
+                cEq.innerHTML += `<div class="flex items-center gap-2 bg-blue-50/50 p-2 rounded-xl border"><select onchange="tempRecEqs[${idx}].id=this.value" class="flex-grow bg-white border rounded-lg px-2 py-1 text-sm">${opt}</select><input type="number" step="0.01" value="${it.qty}" onchange="tempRecEqs[${idx}].qty=parseFloat(this.value)||0" class="w-24 bg-white border rounded-lg px-2 py-1 text-sm"><button type="button" onclick="tempRecEqs.splice(${idx},1); renderRecipeContainers()" class="text-rose-500 px-2"><i class="fa-solid fa-xmark"></i></button></div>`;
+            });
+        }
+        function addRecipeIngRow() { if(appData.ingredients.length>0) tempRecIngs.push({id: appData.ingredients[0].id, qty:10}); renderRecipeContainers(); }
+        function addRecipeSubRow() { if(appData.subRecipes.length>0) tempRecSubs.push({id: appData.subRecipes[0].id, qty:10}); renderRecipeContainers(); }
+        function addRecipePkgRow() { if(appData.packaging.length>0) tempRecPkgs.push({id: appData.packaging[0].id, qty:1}); renderRecipeContainers(); }
+        function addRecipeEqRow() { if(appData.equipment.length>0) tempRecEqs.push({id: appData.equipment[0].id, qty:1}); renderRecipeContainers(); }
+
+        function saveRecipe(e) {
+            e.preventDefault();
+            const id = document.getElementById('rec-id').value;
+            const data = {
+                id: id || 'rec_' + Date.now(),
+                name: document.getElementById('rec-name').value,
+                price: parseFloat(document.getElementById('rec-price').value),
+                ingredients: tempRecIngs,
+                subRecipes: tempRecSubs,
+                packaging: tempRecPkgs,
+                equipment: tempRecEqs
+            };
+            if(id) {
+                const idx = appData.recipes.findIndex(r => r.id === id);
+                if(idx !== -1) appData.recipes[idx] = data;
+            } else { appData.recipes.push(data); }
+            saveData();
+            closeRecipeModal();
+        }
+        function deleteRecipe(id) {
+            if(confirm('ลบเมนูนี้?')) { appData.recipes = appData.recipes.filter(r => r.id !== id); saveData(); }
+        }
+
+        // --- BREAK-EVEN & DELIVERY ---
+        function updateBreakEvenRecipeSelect() {
+            const select = document.getElementById('be-recipe-select');
+            select.innerHTML = '';
+            appData.recipes.forEach(rec => { select.innerHTML += `<option value="${rec.id}">${rec.name} (฿${rec.price})</option>`; });
+        }
+        function calculateBreakEven() {
+            const fixedCost = parseFloat(document.getElementById('be-fixed-cost').value) || 0;
+            const days = parseFloat(document.getElementById('be-days').value) || 30;
+            const recId = document.getElementById('be-recipe-select').value;
+            const rec = appData.recipes.find(r => r.id === recId);
+            if(!rec) return;
+
+            const cost = calculateRecipeCost(rec);
+            const profit = rec.price - cost;
+            const unitsMonth = profit > 0 ? Math.ceil(fixedCost / profit) : 0;
+            const unitsDay = (unitsMonth / days).toFixed(1);
+
+            document.getElementById('be-result-units').innerText = unitsMonth.toLocaleString() + ' หน่วย / เดือน';
+            document.getElementById('be-result-daily').innerText = `หรือประมาณ ${unitsDay} หน่วย / วัน`;
+
+            const channels = [
+                { name: 'หน้าร้าน (Walk-in)', gp: 0 },
+                { name: 'GrabFood / Lineman (GP 30%)', gp: 30 },
+                { name: 'Foodpanda (GP 32%)', gp: 32 }
+            ];
+
+            let html = `<div class="font-medium text-slate-700 mb-2">เปรียบเทียบกำไรสุทธิต่อหน่วย (เมนู: ${rec.name})</div><div class="grid grid-cols-1 md:grid-cols-3 gap-3">`;
+            channels.forEach(ch => {
+                const rev = rec.price * (1 - ch.gp/100);
+                const net = rev - cost;
+                const margin = rec.price > 0 ? (net / rec.price)*100 : 0;
+                html += `<div class="bg-slate-50 p-4 rounded-xl border space-y-1"><div class="font-bold text-xs">${ch.name}</div><div class="text-xs text-slate-500">GP: ${ch.gp}%</div><div class="text-sm font-semibold text-emerald-600">กำไร: ฿${net.toFixed(2)}</div><div class="text-[11px] text-slate-400">Margin: ${margin.toFixed(1)}%</div></div>`;
+            });
+            html += `</div>`;
+            document.getElementById('delivery-simulation-content').innerHTML = html;
+        }
+
+        // --- BACKUP ---
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `procost_v2_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(a); a.click(); a.remove();
+        }
+        function importData(e) {
+            const f = e.target.files[0]; if(!f) return;
+            const r = new FileReader();
+            r.onload = function(evt) {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    if(parsed.ingredients && parsed.recipes) {
+                        appData = parsed; saveData(); alert('กู้คืนข้อมูลสำเร็จ!'); switchTab('ingredients');
+                    } else alert('ไฟล์ไม่ถูกต้อง');
+                } catch(err) { alert('อ่านไฟล์ไม่สำเร็จ'); }
+            };
+            r.readAsText(f);
+        }
+        function resetData() {
+            if(confirm('รีเซ็ตข้อมูลทั้งหมด?')) { localStorage.removeItem('procost_master_data_v2'); location.reload(); }
+        }
+
+        window.onload = function() { loadData(); renderAll(); }
+    </script>
+</body>
+</html>
